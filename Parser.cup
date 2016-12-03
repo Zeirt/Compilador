@@ -180,24 +180,105 @@ condicion ::= TRUE {:
 				System.out.println("Condicion false");
 			:}
 			| ABRIRPARENTESIS condicion: c1 CERRARPARENTESIS {:
-				RESULT = new String(c1);
+				RESULT = c1;
 				System.out.println("Condicion completa");
 			:}
-			| expresion DISTINTOA expresion {:System.out.println("Condicion distintoa");:}
-			| expresion MENORIGUAL expresion {:System.out.println("Condicion menorigual");:}
-			| expresion IGUAL expresion {:System.out.println("Condicion igual");:}
-			| expresion MAYORIGUAL expresion {:System.out.println("Condicion mayorigual");:}
-			| expresion MENOR expresion {:System.out.println("Condicion menor");:}
-			| expresion MAYOR expresion {:System.out.println("Condicion mayor");:}
-			| NOT condicion {:System.out.println("Condicion not bool");:}
+			| expresion: e1 DISTINTOA expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion distintoa");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e1 MENORIGUAL expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion menorigual");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e1 IGUAL expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion igual");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e1 MAYORIGUAL expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion mayorigual");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e1 MENOR expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion menor");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e1 MAYOR expresion: e2 {:
+				if(e1.equals("Integer")&&e2.equals("Integer")){
+					RESULT = e1;
+					System.out.println("Condicion mayor");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
+			| NOT condicion: e1 {:
+				if(e1.equals("Boolean")){
+					RESULT = e1;
+					System.out.println("Condicion not simple");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+			:}
 			| NOT: v expresion: e {:
 				if(e.equals("Boolean")){
 					RESULT = new String("Boolean");
 					System.out.println("Condicion not ambigua");
 				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + vleft + ")");
 			:}
-			| condicion OR condicion {:System.out.println("Condicion or");:}
-			| condicion AND condicion {:System.out.println("Condicion and");:};
+			| condicion: c1 OR condicion: c2 {:
+				if(c1.equals("Boolean")&&c2.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion or simple");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + c1left + ")");
+			:}
+			| expresion: e1 OR expresion: e2 {:
+				if(e1.equals("Boolean")&&e2.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion or ambigua");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e OR condicion: c {:
+				if(e.equals("Boolean")&&c.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion or mixta");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + eleft + ")");
+			:}
+			| condicion: c OR expresion: e {:
+				if(c.equals("Boolean")&&e.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion or mixta");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+			:}
+			| condicion: c1 AND condicion: c2 {:
+				if(c1.equals("Boolean")&&c2.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion and simple");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + c1left + ")");
+			:}
+			| expresion: e1 AND expresion: e2 {:
+				if(e1.equals("Boolean")&&e2.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion and ambigua");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + e1left + ")");
+			:}
+			| expresion: e AND condicion: c {:
+				if(e.equals("Boolean")&&c.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion and mixta");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+			:}
+			| condicion: c AND expresion: e {:
+				if(c.equals("Boolean")&&e.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion and simple");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+			:};
 			
 expresion ::= IDENTIFICADOR: v {:
 					String aux = ParserCup.tablaSimbolos.getSimbolo((String)v);
@@ -214,30 +295,30 @@ expresion ::= IDENTIFICADOR: v {:
 					System.out.println("Expresion Entero");
 				:}
 				| ABRIRPARENTESIS expresion: e1 CERRARPARENTESIS {:
-					RESULT = new String(e1);
+					RESULT = e1;
 					System.out.println("expresion anidada");
 				:}
 				| expresion: e1 SUMA: v expresion: e2 {:
 					if(e1.equals("Integer")&&e2.equals("Integer")){
-						RESULT = new String();
+						RESULT = e1;
 						System.out.println("Expresion suma");
 					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
 				| expresion: e1 RESTA: v expresion: e2 {:
 					if(e1.equals("Integer")&&e2.equals("Integer")){
-						RESULT = new String();
+						RESULT = e1;
 						System.out.println("Expresion resto");
 					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
 				| expresion: e1 MULTIPLICACION: v expresion: e2 {:
 					if(e1.equals("Integer")&&e2.equals("Integer")){
-						RESULT = new String();
+						RESULT = e1;
 						System.out.println("Expresion multiplicacion");
 					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
 				| expresion: e1 DIVISION: v expresion: e2 {:
 					if(e1.equals("Integer")&&e2.equals("Integer")){
-						RESULT = new String();
+						RESULT = e1;
 						System.out.println("Expresion división");
 					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:};

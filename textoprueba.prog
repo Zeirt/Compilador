@@ -1,14 +1,5 @@
 program switch is
-	var sum,k : integer;
-	var sw : boolean;
+	var sum : integer;
 begin
-	sw := true; sum := 0; k := 1;
-	while (k) do
-		sum := sum + 2;
-		if (sw) then
-			sw := not(sum);	
-		end if;
-		k := k + 1;
-	end while;
 	write sum;
 end
