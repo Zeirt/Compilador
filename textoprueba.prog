@@ -4,9 +4,9 @@ program switch is
 begin
 	sw := true; sum := 0; k := 1;
 	while (k) do
-		sw := not(sum);
+		sum := sum + 2;
 		if (sw) then
-			sum := sum - 2;
+			sw := not(sum);	
 		end if;
 		k := k + 1;
 	end while;

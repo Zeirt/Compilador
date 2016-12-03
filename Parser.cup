@@ -15,7 +15,6 @@ parser code
 
 static public TablaSimbolos tablaSimbolos;
 static public Queue<String> colaDeclarados; //Utilizado para procesar declaraciones multiples en una linea
-static public Queue<String> colaTipos; //Utilizado para comprobar concordancia de tipos en expresiones
 
 /** MAIN - LEER TOKENS */
 
@@ -42,7 +41,6 @@ public static void main (String argv[]) throws Exception
     FileReader fr = new FileReader(archivo);
     tablaSimbolos = new TablaSimbolos();
     colaDeclarados = new LinkedList();
-    colaTipos = new LinkedList();
     Scan lex = new Scan(fr);
     ParserCup p = new ParserCup(lex);
     p.parse();
@@ -141,7 +139,6 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion PUNTOCOMA
 						}
 						else System.out.println("Asignacion Aritmetica");
 					}
-					ParserCup.colaTipos.clear();//Vaciamos la cola de tipos
 				:}
 				| IDENTIFICADOR: v ASIGNACION condicion PUNTOCOMA 
 					{:String aux = ParserCup.tablaSimbolos.getSimbolo((String)v);
@@ -156,18 +153,14 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion PUNTOCOMA
 							}
 							else System.out.println("Asignacion Booleana");
 						}
-						ParserCup.colaTipos.clear();//Vaciamos la cola de tipos
 					:}
 				| READ expresion PUNTOCOMA {:
-					ParserCup.colaTipos.clear();//Vaciamos la cola de tipos
 					System.out.println("Read");
 				:}
 				| WRITE expresion PUNTOCOMA {:
-					ParserCup.colaTipos.clear();//Vaciamos la cola de tipos
 					System.out.println("Write de expresion");
 				:}
 				| WRITE condicion PUNTOCOMA {:
-					ParserCup.colaTipos.clear();//Vaciamos la cola de tipos
 					System.out.println("Write de condicion");
 				:}
 				| SKIP {:System.out.println("Skip");:}
@@ -178,11 +171,17 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion PUNTOCOMA
 				| WHILE condicion DO bloqueCodigo END WHILE PUNTOCOMA {:System.out.println("Bucle");:}
 				| WHILE expresion DO bloqueCodigo END WHILE PUNTOCOMA {:System.out.println("Bucle con expresion!");:};
 				
-condicion ::= TRUE {:System.out.println("Condicion true");:}
-			| FALSE {:System.out.println("Condicion false");:}
-			| ABRIRPARENTESIS condicion CERRARPARENTESIS {:
+condicion ::= TRUE {:
+				RESULT = new String("Boolean");
+				System.out.println("Condicion true");
+			:}
+			| FALSE {:
+				RESULT = new String("Boolean");
+				System.out.println("Condicion false");
+			:}
+			| ABRIRPARENTESIS condicion: c1 CERRARPARENTESIS {:
+				RESULT = new String(c1);
 				System.out.println("Condicion completa");
-				ParserCup.colaTipos.clear();
 			:}
 			| expresion DISTINTOA expresion {:System.out.println("Condicion distintoa");:}
 			| expresion MENORIGUAL expresion {:System.out.println("Condicion menorigual");:}
@@ -191,19 +190,12 @@ condicion ::= TRUE {:System.out.println("Condicion true");:}
 			| expresion MENOR expresion {:System.out.println("Condicion menor");:}
 			| expresion MAYOR expresion {:System.out.println("Condicion mayor");:}
 			| NOT condicion {:System.out.println("Condicion not bool");:}
-			| NOT: v expresion {:
-				System.out.println("Condicion not ambigua");
-				String aux = "Undefined";
-				//Vaciar cola para comprobar concordancia. Mal en cuanto encuentra algo que no sea Booleano
-				aux = ParserCup.colaTipos.remove();
-				if(!aux.equals("Boolean")){
-					//Incorrecto. Aununcia error y vacía
-					System.err.println("Error semántico: Expresión " + aux + " inesperada en operación de booleana" + " (Linea " + vleft + ")");
-					ParserCup.colaTipos.clear();
-				}
-				if (!aux.equals("Boolean")) ParserCup.colaTipos.add("Undefined");//Si estaba mal, metemos un tipo malo para tirar toda la expresión anidada si la hubiera
-				//else ParserCup.colaTipos.add("Boolean");
-				:}
+			| NOT: v expresion: e {:
+				if(e.equals("Boolean")){
+					RESULT = new String("Boolean");
+					System.out.println("Condicion not ambigua");
+				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + vleft + ")");
+			:}
 			| condicion OR condicion {:System.out.println("Condicion or");:}
 			| condicion AND condicion {:System.out.println("Condicion and");:};
 			
@@ -213,76 +205,39 @@ expresion ::= IDENTIFICADOR: v {:
 						//No existe en la tabla. Error
 						System.err.println("Error semántico: Llamada a variable no declarada" + " (Linea " + vleft + ", Pos " + vright +")");
 					} else {
-						ParserCup.colaTipos.add(aux); //Añadimos el tipo a la cola para evaluar
+						RESULT = new String(aux);
 					}
 					System.out.println("Expresion Identificador tipo " + aux);
 				:}
 				| ENTERO {:
+					RESULT = new String("Integer");
 					System.out.println("Expresion Entero");
-					ParserCup.colaTipos.add("Integer");
 				:}
-				| ABRIRPARENTESIS expresion CERRARPARENTESIS {:
-					String aux = ParserCup.colaTipos.peek();
-					ParserCup.colaTipos.clear();
-					ParserCup.colaTipos.add(aux);//Metemos un tipo para mantener la referencia
+				| ABRIRPARENTESIS expresion: e1 CERRARPARENTESIS {:
+					RESULT = new String(e1);
 					System.out.println("expresion anidada");
 				:}
-				| expresion SUMA: v expresion {:
-					String aux = "Undefined";
-					while(!ParserCup.colaTipos.isEmpty()){
-						//Vaciar cola para comprobar concordancia. Mal en cuanto encuentra algo que no sea Integer
-						aux = ParserCup.colaTipos.remove();
-						if(!aux.equals("Integer")){
-							//Incorrecto. Aununcia error y vacía
-							System.err.println("Error semántico: Expresión " + aux + " inesperada en operación de enteros" + " (Linea " + vleft + ")");
-							ParserCup.colaTipos.clear();
-						}
-					}
-					if (!aux.equals("Integer")) ParserCup.colaTipos.add("Undefined");//Si estaba mal, metemos un tipo malo para tirar toda la expresión anidada si la hubiera
-					else ParserCup.colaTipos.add("Integer");
-					System.out.println("Expresion suma");
+				| expresion: e1 SUMA: v expresion: e2 {:
+					if(e1.equals("Integer")&&e2.equals("Integer")){
+						RESULT = new String();
+						System.out.println("Expresion suma");
+					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
-				| expresion RESTA: v expresion {:
-					String aux = "Undefined";
-					while(!ParserCup.colaTipos.isEmpty()){
-						//Vaciar cola para comprobar concordancia. Mal en cuanto encuentra algo que no sea Integer
-						aux = ParserCup.colaTipos.remove();
-						if(!aux.equals("Integer")){
-							//Incorrecto. Aununcia error y vacía
-							System.err.println("Error semántico: Expresión " + aux + " inesperada en operación de enteros" + " (Linea " + vleft + ")");
-							ParserCup.colaTipos.clear();
-						}
-					}
-					if (!aux.equals("Integer")) ParserCup.colaTipos.add("Undefined"); //Si estaba mal, metemos un tipo malo para tirar toda la expresión anidada si la hubiera
-					else ParserCup.colaTipos.add("Integer");
-					System.out.println("Expresion resta");
+				| expresion: e1 RESTA: v expresion: e2 {:
+					if(e1.equals("Integer")&&e2.equals("Integer")){
+						RESULT = new String();
+						System.out.println("Expresion resto");
+					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
-				| expresion MULTIPLICACION: v expresion {:
-					String aux = "Undefined";
-					while(!ParserCup.colaTipos.isEmpty()){
-						//Vaciar cola para comprobar concordancia. Mal en cuanto encuentra algo que no sea Integer
-						aux = ParserCup.colaTipos.remove();
-						if(!aux.equals("Integer")){
-							//Incorrecto. Aununcia error y vacía
-							System.err.println("Error semántico: Expresión " + aux + " inesperada en operación de enteros" + " (Linea " + vleft + ")");
-							ParserCup.colaTipos.clear();
-						}
-					}
-					if (!aux.equals("Integer")) ParserCup.colaTipos.add("Undefined"); //Si estaba mal, metemos un tipo malo para tirar toda la expresión anidada si la hubiera
-					else ParserCup.colaTipos.add("Integer");
-					System.out.println("Expresion multiplicacion");
+				| expresion: e1 MULTIPLICACION: v expresion: e2 {:
+					if(e1.equals("Integer")&&e2.equals("Integer")){
+						RESULT = new String();
+						System.out.println("Expresion multiplicacion");
+					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
 				:}
-				| expresion DIVISION: v expresion {:
-					String aux = "Undefined";
-					while(!ParserCup.colaTipos.isEmpty()){
-						//Vaciar cola para comprobar concordancia. Mal en cuanto encuentra algo que no sea Integer
-						aux = ParserCup.colaTipos.remove();
-						if(!aux.equals("Integer")){
-							//Incorrecto. Aununcia error y vacía
-							System.err.println("Error semántico: Expresión " + aux + " inesperada en operación de enteros" + " (Linea " + vleft + ")");
-							ParserCup.colaTipos.clear();
-						}
-					}
-					if (!aux.equals("Integer")) ParserCup.colaTipos.add("Undefined"); //Si estaba mal, metemos un tipo malo para tirar toda la expresión anidada si la hubiera
-					else ParserCup.colaTipos.add("Integer");
-					System.out.println("Expresion division");:};
+				| expresion: e1 DIVISION: v expresion: e2 {:
+					if(e1.equals("Integer")&&e2.equals("Integer")){
+						RESULT = new String();
+						System.out.println("Expresion división");
+					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+				:};
