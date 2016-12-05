@@ -1,5 +1,6 @@
 program switch is
-	var sum : integer;
+	var sum  integer;
 begin
+	sum : 1;
 	write sum;
 end

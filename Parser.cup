@@ -116,7 +116,8 @@ declarar ::= VAR declaracion DOSPUNTOS: v INTEGER PUNTOCOMA
 						System.err.println("Error semántico: Más de una variable de nombre " + ParserCup.colaDeclarados.remove() + " (Linea " + vleft + ")");
 					}
 				}
-			:};
+			:}
+			| error PUNTOCOMA: p {: System.err.println("Error sintáctico: Declaración mal formada en linea " + pleft);:};
 
 declaracion ::= declaracion COMA IDENTIFICADOR: v {:System.out.println("Más de una variable");
 													ParserCup.colaDeclarados.add((String)v);:}
@@ -169,7 +170,8 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion PUNTOCOMA
 				| IF expresion THEN bloqueCodigo END IF PUNTOCOMA {:System.out.println("If simple con expresion!");:}
 				| IF expresion THEN bloqueCodigo ELSE bloqueCodigo END IF PUNTOCOMA {:System.out.println("If con else con expresion!");:}
 				| WHILE condicion DO bloqueCodigo END WHILE PUNTOCOMA {:System.out.println("Bucle");:}
-				| WHILE expresion DO bloqueCodigo END WHILE PUNTOCOMA {:System.out.println("Bucle con expresion!");:};
+				| WHILE expresion DO bloqueCodigo END WHILE PUNTOCOMA {:System.out.println("Bucle con expresion!");:}
+				| error PUNTOCOMA: p {:System.err.println("Error sintáctico: sentencia mal escrita en linea " + pleft);:};
 				
 condicion ::= TRUE {:
 				RESULT = new String("Boolean");
@@ -282,7 +284,7 @@ condicion ::= TRUE {:
 			
 expresion ::= IDENTIFICADOR: v {:
 					String aux = ParserCup.tablaSimbolos.getSimbolo((String)v);
-					if (aux.equals("Void")){
+					if (aux.equals("Undefined")){
 						//No existe en la tabla. Error
 						System.err.println("Error semántico: Llamada a variable no declarada" + " (Linea " + vleft + ", Pos " + vright +")");
 					} else {

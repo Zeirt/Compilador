@@ -18,13 +18,13 @@ public class TablaSimbolos{
 	
 	/**
 	 * Comprueba si un símbolo existe en la tabla y devuelve su tipo.
-	 * Si no existe, devuelve "Void"
+	 * Si no existe, devuelve "Undefined"
 	 * @param s simbolo a comprobar
 	 * @return tipo de simbolo
 	 */
 	public String getSimbolo(String s){
 		if(tabla.containsKey(s))return tabla.get(s);
-		else return "Void";
+		else return "Undefined";
 	}
 	
 	/**
