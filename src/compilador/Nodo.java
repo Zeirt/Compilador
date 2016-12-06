@@ -4,7 +4,7 @@ public class Nodo {
 	private String valor;
 	private String tipo;
 	private boolean visitado;
-	private Nodo lHijo, rHijo;
+	private Nodo lHijo, rHijo, espHijo;
 	
 	public Nodo(String v, String t, Nodo l, Nodo r){
 		valor = v;
@@ -12,6 +12,16 @@ public class Nodo {
 		visitado = false;
 		lHijo = l;
 		rHijo = r;
+		espHijo = null; //hijo especial. Usado solo para ifs con else
+	}
+	
+	public Nodo(String v, String t, Nodo l, Nodo r, Nodo e){
+		valor = v;
+		tipo = t;
+		visitado = false;
+		lHijo = l;
+		rHijo = r;
+		espHijo = e;
 	}
 	
 	public String getValor(){
@@ -34,6 +44,10 @@ public class Nodo {
 		return rHijo;
 	}
 	
+	public Nodo getEspHijo(){
+		return espHijo;
+	}
+	
 	public void setValor(String v){
 		valor = v;
 	}
@@ -52,6 +66,10 @@ public class Nodo {
 	
 	public void setRHijo(Nodo n){
 		rHijo = n;
+	}
+	
+	public void setEspHijo(Nodo n){
+		espHijo = n;
 	}
 	/*
 	 * Todo: esto
