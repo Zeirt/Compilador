@@ -1,14 +1,14 @@
-program switch is
+programçç switch is
 	var sum,k : integer;
 	var sw : boolean;
 begin
 	sw := true; sum := 0; k := 1;
-	while (k) do
+	while (sw) do
 		sum := sum + 2;
 		if (sw) then
-			sw := (true)or(not(sw));	
+			sw := not(sw);	
 		end if;
-		k := k + 1;
+		k := k / 3;
 	end while;
 	write sum;
 end

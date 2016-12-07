@@ -33,6 +33,16 @@ private void escribirToken(String nom) throws IOException{
 	System.out.println(nom + " [" + yyline + "," + yycolumn + "," + yytext() + "]");
 }
 
+private boolean hayErrores = false;
+
+/* Metodo de crear error*/
+private void hayError(){
+	hayErrores = true;
+}
+
+public boolean devolverErrores(){
+	return hayErrores;
+}
 %}
 // MACROS.
 
@@ -241,6 +251,7 @@ Entero = ("+"|"-")? [0-9]+       //Macro para numeros enteros. Va a confundir un
 
 \ |\t|\r|\n|\r\n|\u2028|\u2029|\u000B|\u000C|\u0085 {                                                    /* Regla lexica para evitar estrellarse cuando se encuentra un espacio, tabulador o EOL, en realidad, no hacemos nada */}           
 
-<<EOF>>         {System.exit(0);                                                              /* Cuando se encuentra EOF, acaba PERO NO ASI. CAMBIAR LUEGO */}  
+<<EOF>>         {return new Symbol(ParserSym.EOF, yyline, yycolumn, yytext());                           /* Cuando se encuentra EOF, acaba */}  
 
-.               {System.err.println("Error: caracter no definido en " +yyline + "," + yycolumn +" : " + yytext());    /* Regla lexica para evitar estrellarse cuando se encuentra algo extraño. Informamos a usuario */}                
+.               {hayError();
+				System.err.println("Error léxico: caracter no definido en " +yyline + "," + yycolumn +" : " + yytext());    /* Regla lexica para evitar estrellarse cuando se encuentra algo extraño. Informamos a usuario */}                

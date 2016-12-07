@@ -16,6 +16,7 @@ parser code
 static public TablaSimbolos tablaSimbolos;
 static public Queue<String> colaDeclarados; //Utilizado para procesar declaraciones multiples en una linea
 static public Ast arbol; //Para almacenar el AST
+static public boolean hayErrores; //Para saber si hay errores en el programa o no
 
 /** MAIN - LEER TOKENS */
 
@@ -42,6 +43,7 @@ public static void main (String argv[]) throws Exception
     FileReader fr = new FileReader(archivo);
     tablaSimbolos = new TablaSimbolos();
     colaDeclarados = new LinkedList();
+    hayErrores = false;
     arbol = new Ast();
     Scan lex = new Scan(fr);
     ParserCup p = new ParserCup(lex);
@@ -61,6 +63,14 @@ public void report_fatal_error(String message, Object info) {
   + message + " ",(Symbol)info);
   report_error("** Final del analisis.", null);
   System.exit(1);
+}
+
+public boolean hayErroresFinales(){
+	if(hayErrores) return true;
+	else {
+		if (ParserCup.getScanner().devolverErrores()) return true;
+		else return false;
+	}
 }
 :}
 
@@ -87,10 +97,14 @@ start with programa;
 programa ::= declararProg: d bloqueDeclaraciones: bd BEGIN bloqueCodigo: bc END {:
 				System.out.println("Programa completo");
 				ParserCup.arbol.setRoot(new Nodo("Programa", "", (Nodo)d, (Nodo)bd, (Nodo)bc));
+				if(hayErroresFinales()) System.err.println("Análisis acabado con errores");
+				else System.out.println("Análisis acabado sin errores.");
 			:}
 			 | declararProg: d BEGIN bloqueCodigo: b END {:
 				 System.out.println("Programa completo sin declaraciones");
 			 ParserCup.arbol.setRoot(new Nodo("ProgramaSimple", "", (Nodo)d, (Nodo)b));
+			 if(hayErroresFinales()) System.err.println("Análisis acabado con errores");
+				else System.out.println("Análisis acabado sin errores.");
 			 :};
 
 declararProg ::= PROGRAM IDENTIFICADOR: v IS {:
@@ -118,6 +132,7 @@ declarar ::= VAR declaracion: d DOSPUNTOS: v INTEGER PUNTOCOMA
 						RESULT = new Nodo("Declarar", "Integers", (Nodo)d, null);
 					}
 					else{
+						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Más de una variable de nombre " + ParserCup.colaDeclarados.remove() + " (Linea " + vleft + ")");
 					}
 				}
@@ -132,11 +147,15 @@ declarar ::= VAR declaracion: d DOSPUNTOS: v INTEGER PUNTOCOMA
 						RESULT = new Nodo("Declarar", "Booleans", (Nodo)d, null);
 					}
 					else{
+						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Más de una variable de nombre " + ParserCup.colaDeclarados.remove() + " (Linea " + vleft + ")");
 					}
 				}
 			:}
-			| error PUNTOCOMA: p {: System.err.println("Error sintáctico: Declaración mal formada en linea " + pleft);:};
+			| error PUNTOCOMA: p {: 
+				System.err.println("Error sintáctico: Declaración mal formada en linea " + pleft);
+				ParserCup.hayErrores = true;
+			:};
 
 declaracion ::= declaracion: d COMA IDENTIFICADOR: v {:
 					System.out.println("Más de una variable");
@@ -164,11 +183,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 					String aux = ParserCup.tablaSimbolos.getSimbolo(auxn.getValor());
 					if (aux.equals("Void")){
 						//No existe en la tabla. Error
+						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Asignación a variable no declarada (Linea " + vleft + ", Pos " + vright +")");
 					}
 					else{ //Si existe, comprobamos tipo
 						if(!aux.equals("Integer")){
 							//Tipo incorrecto. Error
+							ParserCup.hayErrores = true;
 							System.err.println("Error semántico: Asignación aritmetica a variable tipo " + aux + " (Linea " + vleft + ", Pos " + vright +")");
 						}
 						else {
@@ -183,11 +204,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						String aux = ParserCup.tablaSimbolos.getSimbolo(auxn.getValor());
 						if (aux.equals("Void")){
 							//No existe en la tabla. Error
+							ParserCup.hayErrores = true;
 							System.err.println("Error semántico: Asignación a variable no declarada (Linea " + vleft + ", Pos " + vright +")");
 						}
 						else{ //Si existe, comprobamos tipo
 							if(!aux.equals("Boolean")){
 								//Tipo incorrecto. Error
+								ParserCup.hayErrores = true;
 								System.err.println("Error semántico: Asignación booleana a variable tipo " + aux + " (Linea " + vleft + ", Pos " + vright +")");
 							}
 							else{
@@ -223,20 +246,47 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 				| IF expresion: e THEN bloqueCodigo: b END IF PUNTOCOMA {:
 					System.out.println("If simple con expresion");
 					RESULT = new Nodo("If","Sent", (Nodo)e, (Nodo)b);
+					Nodo aux = (Nodo) e;
+					if(!aux.getLHijo().getTipo().equals("Boolean")){
+						//Condicion tipo integer. No vale
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Condición del if no es boolean (linea " +eleft +")");
+					}
 				:}
 				| IF expresion: e THEN bloqueCodigo: b1 ELSE bloqueCodigo: b2 END IF PUNTOCOMA {:
 					System.out.println("If con else con expresion");
 					RESULT = new Nodo("IfElse", "Sent", (Nodo)e, (Nodo)b1, (Nodo)b2);
+					Nodo aux = (Nodo) e;
+					if(!aux.getLHijo().getTipo().equals("Boolean")){
+						//Condicion tipo integer. No vale
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Condición del if no es boolean (linea " +eleft +")");
+					}
 				:}
 				| WHILE condicion: c DO bloqueCodigo: b END WHILE PUNTOCOMA {:
 					System.out.println("Bucle");
 					RESULT = new Nodo("While","Sent", (Nodo)c, (Nodo)b);
+					Nodo aux = (Nodo) c;
+					if(aux.getLHijo().getValor().equals("True")||aux.getLHijo().getValor().equals("False")){
+						//Si la condicion es explicitamente true or false, no va a acabar. Avisa
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Detectado bucle infinito que empieza en linea " + cleft);
+					}
 				:}
 				| WHILE expresion: e DO bloqueCodigo: b END WHILE PUNTOCOMA {:
 					System.out.println("Bucle con expresion");
 					RESULT = new Nodo("While","Sent", (Nodo)e, (Nodo)b);
+					Nodo aux = (Nodo) e;
+					if(!aux.getLHijo().getTipo().equals("Boolean")){
+						//Condicion tipo integer. No vale
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Condición del bucle no es boolean (linea " +eleft +")");
+					}
 				:}
-				| error PUNTOCOMA: p {:System.err.println("Error sintáctico: sentencia mal escrita en linea " + pleft);:};
+				| error PUNTOCOMA: p {:
+					ParserCup.hayErrores = true;
+					System.err.println("Error sintáctico: sentencia mal escrita en linea " + pleft);
+				:};
 				
 condicion ::= TRUE {:
 				RESULT = new Nodo("True", "Boolean", null, null);
@@ -256,7 +306,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion distintoa");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e1 MENORIGUAL: v expresion: e2 {:
 				Nodo aux1 = (Nodo)e1;
@@ -264,7 +317,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion menorigual");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e1 IGUAL: v expresion: e2 {:
 				Nodo aux1 = (Nodo)e1;
@@ -272,7 +328,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion igual");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e1 MAYORIGUAL: v expresion: e2 {:
 				Nodo aux1 = (Nodo)e1;
@@ -280,7 +339,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion mayorigual");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e1 MENOR: v expresion: e2 {:
 				Nodo aux1 = (Nodo)e1;
@@ -288,7 +350,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion menor");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e1 MAYOR: v expresion: e2 {:
 				Nodo aux1 = (Nodo)e1;
@@ -296,21 +361,30 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 					RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion mayor");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				}
 			:}
 			| NOT: v condicion: e1 {:
 				Nodo aux = (Nodo) e1;
 				if(aux.getTipo().equals("Boolean") || aux.getTipo().equals("Cond")){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo) e1, null);
 					System.out.println("Condicion not simple");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de comparación" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación not" + " (Linea " + e1left + ")");
+				}
 			:}
 			| NOT: v expresion: e {:
 				Nodo aux = (Nodo) e;
 				if(aux.getTipo().equals("Boolean") || aux.getTipo().equals("Cond")){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo) e, null);
 					System.out.println("Condicion not ambigua");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + vleft + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación not" + " (Linea " + vleft + ")");
+				}
 			:}
 			| condicion: c1 OR: v condicion: c2 {:
 				Nodo aux1 = (Nodo) c1;
@@ -318,7 +392,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)c1, (Nodo)c2);
 					System.out.println("Condicion or simple");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + c1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación not" + " (Linea " + c1left + ")");
+				}
 			:}
 			| expresion: e1 OR: v expresion: e2 {:
 				Nodo aux1 = (Nodo) e1;
@@ -326,7 +403,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion or ambigua");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación or" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e OR: v condicion: c {:
 				Nodo aux1 = (Nodo) e;
@@ -334,7 +414,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)e, (Nodo)c);
 					System.out.println("Condicion or mixta");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + eleft + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación or" + " (Linea " + eleft + ")");
+				}
 			:}
 			| condicion: c OR: v expresion: e {:
 				Nodo aux1 = (Nodo) c;
@@ -342,7 +425,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)c, (Nodo)e);
 					System.out.println("Condicion or mixta");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación or" + " (Linea " + cleft + ")");
+				}
 			:}
 			| condicion: c1 AND: v condicion: c2 {:
 				Nodo aux1 = (Nodo) c1;
@@ -350,7 +436,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)c1, (Nodo)c2);
 					System.out.println("Condicion and simple");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + c1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación and" + " (Linea " + c1left + ")");
+				}
 			:}
 			| expresion: e1 AND: v expresion: e2 {:
 				Nodo aux1 = (Nodo) e1;
@@ -358,7 +447,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)e1, (Nodo)e2);
 					System.out.println("Condicion and ambigua");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + e1left + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación and" + " (Linea " + e1left + ")");
+				}
 			:}
 			| expresion: e AND: v condicion: c {:
 				Nodo aux1 = (Nodo) e;
@@ -366,7 +458,10 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)e, (Nodo)c);
 					System.out.println("Condicion and mixta");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación and" + " (Linea " + cleft + ")");
+				}
 			:}
 			| condicion: c AND: v expresion: e {:
 				Nodo aux1 = (Nodo) c;
@@ -374,13 +469,17 @@ condicion ::= TRUE {:
 				if((aux1.getTipo().equals("Boolean")||aux1.getTipo().equals("Cond"))&&(aux2.getTipo().equals("Boolean")||aux2.getTipo().equals("Cond"))){
 					RESULT = new Nodo ((String)v, "Cond", (Nodo)c, (Nodo)e);
 					System.out.println("Condicion and simple");
-				} else System.err.println("Error semántico: Expresión de tipo inesperado en operación booleana" + " (Linea " + cleft + ")");
+				} else {
+					ParserCup.hayErrores = true;
+					System.err.println("Error semántico: Expresión de tipo inesperado en operación and" + " (Linea " + cleft + ")");
+				}
 			:};
 			
 expresion ::= IDENTIFICADOR: v {:
 					String aux = ParserCup.tablaSimbolos.getSimbolo((String)v);
 					if (aux.equals("Undefined")){
 						//No existe en la tabla. Error
+						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Llamada a variable no declarada" + " (Linea " + vleft + ", Pos " + vright +")");
 					} else {
 						System.out.println("Expresion Identificador tipo " + aux);
@@ -392,7 +491,8 @@ expresion ::= IDENTIFICADOR: v {:
 					System.out.println("Expresion Entero");
 				:}
 				| ABRIRPARENTESIS expresion: e1 CERRARPARENTESIS {:
-					RESULT = new Nodo ("Parentesis", "OP", (Nodo)e1, null);
+					Nodo aux = (Nodo) e1;
+					RESULT = new Nodo ("Parentesis", aux.getTipo(), (Nodo)e1, null);
 					System.out.println("expresion anidada");
 				:}
 				| expresion: e1 SUMA: v expresion: e2 {:
@@ -401,7 +501,10 @@ expresion ::= IDENTIFICADOR: v {:
 					if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);//Creamos nodo con hijos como operadores
 						System.out.println("Expresion suma");
-					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					} else {
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					}
 				:}
 				| expresion: e1 RESTA: v expresion: e2 {:
 					Nodo aux1 = (Nodo)e1;
@@ -409,7 +512,10 @@ expresion ::= IDENTIFICADOR: v {:
 					if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 						System.out.println("Expresion resto");
-					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					} else {
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					}
 				:}
 				| expresion: e1 MULTIPLICACION: v expresion: e2 {:
 					Nodo aux1 = (Nodo)e1;
@@ -417,7 +523,10 @@ expresion ::= IDENTIFICADOR: v {:
 					if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);
 						System.out.println("Expresion multiplicacion");
-					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					} else {
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					}
 				:}
 				| expresion: e1 DIVISION: v expresion: e2 {:
 					Nodo aux1 = (Nodo)e1;
@@ -425,5 +534,12 @@ expresion ::= IDENTIFICADOR: v {:
 					if((aux1.getTipo().equals("Integer")||aux1.getTipo().equals("OP"))&&(aux2.getTipo().equals("Integer")||aux2.getTipo().equals("OP"))){
 						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);;
 						System.out.println("Expresion división");
-					} else System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+						if(aux2.getValor().equals("0")){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Detectada división entre 0 en linea " + vleft);
+						}
+					} else {
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+					}
 				:};
