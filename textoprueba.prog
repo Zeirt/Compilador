@@ -2,7 +2,6 @@ program switch is
 	var sum,k : integer;
 	var sw : boolean;
 begin
-	write (sum);
 	sw := true; sum := 0; k := 1;
 	while (sw) do
 		sum := sum + 2;

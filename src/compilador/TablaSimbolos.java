@@ -1,6 +1,7 @@
 package compilador;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class TablaSimbolos{
 	
@@ -55,6 +56,16 @@ public class TablaSimbolos{
 		if(!tablaInicializado.get(s)){
 			tablaInicializado.remove(s);
 			tablaInicializado.put(s, true);
+		}
+	}
+	
+	/**
+	 * Imprime por pantalla un volcado de la tabla de símbolos.
+	 */
+	public void volcarTabla(){
+		System.out.println("Tabla de símbolos: ");
+		for(Map.Entry<String, String> entry : tablaTipos.entrySet()){
+			System.out.println(entry.getKey()+ " " + entry.getValue() + " " + tablaInicializado.get(entry.getKey()));
 		}
 	}
 }

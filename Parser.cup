@@ -99,14 +99,20 @@ start with programa;
 programa ::= declararProg: d bloqueDeclaraciones: bd BEGIN bloqueCodigo: bc END {:
 				System.out.println("Programa completo");
 				ParserCup.arbol.setRoot(new Nodo("Programa", "", (Nodo)d, (Nodo)bd, (Nodo)bc));
-				if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores");
-				else System.out.println("Análisis acabado sin errores.");
+				if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores. No se mostrará árbol ni tabla.");
+				else {
+					System.out.println("Análisis acabado sin errores.\n");
+					ParserCup.tablaSimbolos.volcarTabla();
+				}
 			:}
 			 | declararProg: d BEGIN bloqueCodigo: b END {:
 				 System.out.println("Programa completo sin declaraciones");
 			 ParserCup.arbol.setRoot(new Nodo("ProgramaSimple", "", (Nodo)d, (Nodo)b));
-			 if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores");
-				else System.out.println("Análisis acabado sin errores.");
+			 if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores. No se mostrará árbol ni tabla.");
+				else {
+					System.out.println("Análisis acabado sin errores.\n");
+					ParserCup.tablaSimbolos.volcarTabla();
+				}
 			 :};
 
 declararProg ::= PROGRAM IDENTIFICADOR: v IS {:
