@@ -197,6 +197,7 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						else {
 							System.out.println("Asignacion Aritmetica");
 							RESULT = new Nodo("Asig", "Sent", auxn, (Nodo)e);
+							ParserCup.tablaSimbolos.inicializarSimbolo((String)v);//Decimos que ya está inicializado
 						}
 					}
 				:}
@@ -218,6 +219,7 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 							else{
 								System.out.println("Asignacion Booleana");
 								RESULT = new Nodo("Asig", "Sent", auxn, (Nodo)c);
+								ParserCup.tablaSimbolos.inicializarSimbolo((String)v);//Decimos que ya está inicializado
 							}
 						}
 					:}
@@ -228,10 +230,26 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 				| WRITE expresion: e PUNTOCOMA {:
 					System.out.println("Write de expresion");
 					RESULT = new Nodo("Write", "Sent", (Nodo)e, null);
+					Nodo aux = (Nodo) e;
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + eleft);
+						}
+					}
 				:}
 				| WRITE condicion: c PUNTOCOMA {:
 					System.out.println("Write de condicion");
 					RESULT = new Nodo("Write", "Sent", (Nodo)c, null);
+					Nodo aux = (Nodo) c;
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + cleft);
+						}
+					}
 				:}
 				| SKIP {:
 					System.out.println("Skip");
@@ -240,10 +258,26 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 				| IF condicion: c THEN bloqueCodigo: b END IF PUNTOCOMA {:
 					System.out.println("If simple");
 					RESULT = new Nodo("If","Sent", (Nodo)c, (Nodo)b);
+					Nodo aux = (Nodo) c;
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + cleft);
+						}
+					}
 				:}
 				| IF condicion: c THEN bloqueCodigo: b1 ELSE bloqueCodigo: b2 END IF PUNTOCOMA {:
 					System.out.println("If con else");
 					RESULT = new Nodo("IfElse", "Sent", (Nodo)c, (Nodo)b1, (Nodo)b2);
+					Nodo aux = (Nodo) c;
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + cleft);
+						}
+					}
 				:}
 				| IF expresion: e THEN bloqueCodigo: b END IF PUNTOCOMA {:
 					System.out.println("If simple con expresion");
@@ -253,6 +287,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						//Condicion tipo integer. No vale
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Condición del if no es boolean (linea " +eleft +")");
+					}
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + eleft);
+						}
 					}
 				:}
 				| IF expresion: e THEN bloqueCodigo: b1 ELSE bloqueCodigo: b2 END IF PUNTOCOMA {:
@@ -264,6 +305,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Condición del if no es boolean (linea " +eleft +")");
 					}
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + eleft);
+						}
+					}
 				:}
 				| WHILE condicion: c DO bloqueCodigo: b END WHILE PUNTOCOMA {:
 					System.out.println("Bucle");
@@ -274,6 +322,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Detectado bucle infinito que empieza en linea " + cleft);
 					}
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + cleft);
+						}
+					}
 				:}
 				| WHILE expresion: e DO bloqueCodigo: b END WHILE PUNTOCOMA {:
 					System.out.println("Bucle con expresion");
@@ -283,6 +338,13 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						//Condicion tipo integer. No vale
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Condición del bucle no es boolean (linea " +eleft +")");
+					}
+					if(!ParserCup.tablaSimbolos.getSimbolo(aux.getLHijo().getValor()).equals("Undefined")){
+						//Si la condicion es un simbolo de la tabla, comprobamos si está inicializado
+						if(!ParserCup.tablaSimbolos.estaInicializado(aux.getLHijo().getValor())){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Leyendose variable no inicializada en linea " + eleft);
+						}
 					}
 				:}
 				| error PUNTOCOMA: p {:
