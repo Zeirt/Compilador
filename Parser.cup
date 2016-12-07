@@ -13,6 +13,8 @@ import java.util.NoSuchElementException;
 parser code
 {:
 
+static public Scan lex;
+static public ParserCup p;
 static public TablaSimbolos tablaSimbolos;
 static public Queue<String> colaDeclarados; //Utilizado para procesar declaraciones multiples en una linea
 static public Ast arbol; //Para almacenar el AST
@@ -45,8 +47,8 @@ public static void main (String argv[]) throws Exception
     colaDeclarados = new LinkedList();
     hayErrores = false;
     arbol = new Ast();
-    Scan lex = new Scan(fr);
-    ParserCup p = new ParserCup(lex);
+    lex = new Scan(fr);
+    p = new ParserCup(lex);
     p.parse();
 }
 
@@ -65,10 +67,10 @@ public void report_fatal_error(String message, Object info) {
   System.exit(1);
 }
 
-public boolean hayErroresFinales(){
+public static boolean hayErroresFinales(){
 	if(hayErrores) return true;
 	else {
-		if (ParserCup.getScanner().devolverErrores()) return true;
+		if (lex.devolverErrores()) return true;
 		else return false;
 	}
 }
@@ -97,13 +99,13 @@ start with programa;
 programa ::= declararProg: d bloqueDeclaraciones: bd BEGIN bloqueCodigo: bc END {:
 				System.out.println("Programa completo");
 				ParserCup.arbol.setRoot(new Nodo("Programa", "", (Nodo)d, (Nodo)bd, (Nodo)bc));
-				if(hayErroresFinales()) System.err.println("Análisis acabado con errores");
+				if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores");
 				else System.out.println("Análisis acabado sin errores.");
 			:}
 			 | declararProg: d BEGIN bloqueCodigo: b END {:
 				 System.out.println("Programa completo sin declaraciones");
 			 ParserCup.arbol.setRoot(new Nodo("ProgramaSimple", "", (Nodo)d, (Nodo)b));
-			 if(hayErroresFinales()) System.err.println("Análisis acabado con errores");
+			 if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores");
 				else System.out.println("Análisis acabado sin errores.");
 			 :};
 
