@@ -1,0 +1,12 @@
+program prog6 is
+	var x,y: intejojojojojger;
+	var b,c: boolean;
+begin
+	read b; 
+	if (b) then 
+		x := 6;
+	else 
+		c := false; 
+	end if;
+	b := b and (b or c);
+end

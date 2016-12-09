@@ -9,6 +9,13 @@ public class Nodo {
 	private Nodo lHijo, rHijo, espHijo;
 	private List<Nodo> hijos;
 	
+	/**
+	 * Constructor de nodo normal (solo pide dos hijos)
+	 * @param v valor
+	 * @param t tipo
+	 * @param l hijo izquierdo (si lo hay, si no null)
+	 * @param r hijo derecho (si lo hay, si no null)
+	 */
 	public Nodo(String v, String t, Nodo l, Nodo r){
 		valor = v;
 		tipo = t;
@@ -17,7 +24,7 @@ public class Nodo {
 		espHijo = null; //hijo especial. Usado solo para ifs con else
 		hijos = new ArrayList<Nodo>();
 		if(l==null){
-			//No hacemos nada (no puedo hacer la comprobaciÃ³n al reves)
+			//No hacemos nada (no puedo hacer la comprobación al reves)
 		} else hijos.add(l);
 		if(r==null){
 			
@@ -25,6 +32,14 @@ public class Nodo {
 		
 	}
 	
+	/**
+	 * Constructor de nodo especial con tres hijos
+	 * @param v valor
+	 * @param t tipo
+	 * @param l hijo izquierdo
+	 * @param r hijo derecho
+	 * @param e hijo especial
+	 */
 	public Nodo(String v, String t, Nodo l, Nodo r, Nodo e){
 		valor = v;
 		tipo = t;
@@ -33,7 +48,7 @@ public class Nodo {
 		espHijo = e;
 		hijos = new ArrayList<Nodo>();
 		if(l==null){
-			//No hacemos nada (no puedo hacer la comprobaciÃ³n al reves)
+			//No hacemos nada (no puedo hacer la comprobación al reves)
 		} else hijos.add(l);
 		if(r==null){
 			
@@ -82,19 +97,26 @@ public class Nodo {
 	public void setEspHijo(Nodo n){
 		espHijo = n;
 	}
-	/*
+	
+	/**
 	 * Imprimidor de arbol. 
-	 * Funciona de manera recursiva, escribiendo una columna por hijo y llamando el mismo mÃ©todo para estos, tabulando.
-	 * Comienza siendo llamado por Ast con los parÃ¡metros nombre vacÃ­o y esCola como verdadero para saber que estÃ¡ empezando.
+	 * Funciona de manera recursiva, escribiendo una columna por hijo y llamando el mismo método para estos, tabulando.
+	 * Comienza siendo llamado por Ast con los parámetros nombre vacío y esCola como verdadero para saber que está empezando.
+	 * @param nombre texto a imprimir. Empezar con string vacio
+	 * @param esCola. Es último hijo del nivel anterior?
 	 */
 	public void crearArbol(String nombre, boolean esCola){
 		System.out.println(nombre + (esCola ? ".-- " : ":-- ") + valor);
+		//si esCola, imprime fin de columna (.--), si no, imprime continuación (:--)
         for (int i = 0; i < hijos.size() - 1; i++) {
+        	//tantas veces como hijos tenga - 1 (hijos no cola)
             hijos.get(i).crearArbol(nombre + (esCola ? "    " : ":   "), false);
+            //si es cola, añade un espacio. Si no, continua la columna
         }
         if (hijos.size() > 0) {
-            hijos.get(hijos.size() - 1)
-                    .crearArbol(nombre + (esCola ?"    " : ":   "), true);
+        	//si hay al menos un hijo
+            hijos.get(hijos.size() - 1).crearArbol(nombre + (esCola ?"    " : ":   "), true);
+            //ultimo hijo será cola
         }
 	}
 }

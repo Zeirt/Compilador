@@ -1,0 +1,12 @@
+programççççç frombinary is
+	var sum, n : integer;
+	var bol : boolean;
+begin
+	bol çç:= true;
+	sum := 10; read n;
+	whileçç ( n < 2 ) do
+		sum := 2*3+n; 
+		read n;
+	end while;
+	write sçççum + 1;
+end

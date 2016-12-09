@@ -1,0 +1,16 @@
+program prog4 is
+	var x,y,b: integer;
+	var b,c: boolean;
+begin
+	read x; read c;
+	b := x;
+	if (x = y) then
+		c := x <= y;
+	else 
+		y := x > y;
+	end if;
+	while (b > x) do 
+		x := x + 1;
+	end while;
+	b := b and (y or z);
+end

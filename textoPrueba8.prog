@@ -1,0 +1,15 @@
+program prog8 is
+	var x,y: integer;
+	var b,c: boolean;
+begin
+	read x; read y; write x+y;
+	b := x < c;
+	if x = y then 
+		y := x / 0;
+	else 
+		b := x > y;
+	end if;
+	while (true) do 
+		x := x + 1;
+	end while;
+end
