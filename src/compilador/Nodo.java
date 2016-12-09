@@ -1,27 +1,46 @@
 package compilador;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class Nodo {
 	private String valor;
 	private String tipo;
-	private boolean visitado;
 	private Nodo lHijo, rHijo, espHijo;
+	private List<Nodo> hijos;
 	
 	public Nodo(String v, String t, Nodo l, Nodo r){
 		valor = v;
 		tipo = t;
-		visitado = false;
 		lHijo = l;
 		rHijo = r;
 		espHijo = null; //hijo especial. Usado solo para ifs con else
+		hijos = new ArrayList<Nodo>();
+		if(l==null){
+			//No hacemos nada (no puedo hacer la comprobación al reves)
+		} else hijos.add(l);
+		if(r==null){
+			
+		}else hijos.add(r);
+		
 	}
 	
 	public Nodo(String v, String t, Nodo l, Nodo r, Nodo e){
 		valor = v;
 		tipo = t;
-		visitado = false;
 		lHijo = l;
 		rHijo = r;
 		espHijo = e;
+		hijos = new ArrayList<Nodo>();
+		if(l==null){
+			//No hacemos nada (no puedo hacer la comprobación al reves)
+		} else hijos.add(l);
+		if(r==null){
+			
+		}else hijos.add(r);
+		if(e==null){
+			
+		}else hijos.add(e);
 	}
 	
 	public String getValor(){
@@ -30,10 +49,6 @@ public class Nodo {
 	
 	public String getTipo(){
 		return tipo;
-	}
-	
-	public boolean getVisitado(){
-		return visitado;
 	}
 	
 	public Nodo getLHijo(){
@@ -56,10 +71,6 @@ public class Nodo {
 		tipo = t;
 	}
 	
-	public void setVisitado(boolean v){
-		visitado = v;
-	}
-	
 	public void setLHijo(Nodo n){
 		lHijo = n;
 	}
@@ -72,10 +83,18 @@ public class Nodo {
 		espHijo = n;
 	}
 	/*
-	 * Todo: esto
+	 * Imprimidor de arbol. 
+	 * Funciona de manera recursiva, escribiendo una columna por hijo y llamando el mismo método para estos, tabulando.
+	 * Comienza siendo llamado por Ast con los parámetros nombre vacío y esCola como verdadero para saber que está empezando.
 	 */
-	public String crearStringArbol(){
-		String aux = "";
-		return aux;
+	public void crearArbol(String nombre, boolean esCola){
+		System.out.println(nombre + (esCola ? ".-- " : ":-- ") + valor);
+        for (int i = 0; i < hijos.size() - 1; i++) {
+            hijos.get(i).crearArbol(nombre + (esCola ? "    " : ":   "), false);
+        }
+        if (hijos.size() > 0) {
+            hijos.get(hijos.size() - 1)
+                    .crearArbol(nombre + (esCola ?"    " : ":   "), true);
+        }
 	}
 }

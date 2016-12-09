@@ -1,25 +1,22 @@
 package compilador;
 
-import java.util.Stack;
-
 public class Ast{
-	private Nodo root;
-	private Stack<Nodo> stack;
+	private Nodo raiz;
 	
 	public Ast(){
-		root =null;
-		stack = new Stack<Nodo>();
+		raiz =null;
 	}
 	
-	public Nodo getRoot(){
-		return root;
+	public Nodo getRaiz(){
+		return raiz;
 	}
 	
-	public void setRoot(Nodo r){
-		root = r;
+	public void setRaiz(Nodo r){
+		raiz = r;
 	}
 	
-	public String getArbol(){
-		return root.crearStringArbol();
+	public void imprimirArbol(){
+		System.out.println("\nArbol de Análisis Sintactico (AST):\n");
+		raiz.crearArbol("",true);
 	}
 }

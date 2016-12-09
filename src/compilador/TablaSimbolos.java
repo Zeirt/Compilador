@@ -63,7 +63,7 @@ public class TablaSimbolos{
 	 * Imprime por pantalla un volcado de la tabla de símbolos.
 	 */
 	public void volcarTabla(){
-		System.out.println("Tabla de símbolos: ");
+		System.out.println("Tabla de símbolos: \n");
 		for(Map.Entry<String, String> entry : tablaTipos.entrySet()){
 			System.out.println(entry.getKey()+ " " + entry.getValue() + " " + tablaInicializado.get(entry.getKey()));
 		}

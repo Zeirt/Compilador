@@ -98,20 +98,22 @@ start with programa;
 
 programa ::= declararProg: d bloqueDeclaraciones: bd BEGIN bloqueCodigo: bc END {:
 				System.out.println("Programa completo");
-				ParserCup.arbol.setRoot(new Nodo("Programa", "", (Nodo)d, (Nodo)bd, (Nodo)bc));
+				ParserCup.arbol.setRaiz(new Nodo("Programa", "", (Nodo)d, (Nodo)bd, (Nodo)bc));
 				if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores. No se mostrará árbol ni tabla.");
 				else {
 					System.out.println("Análisis acabado sin errores.\n");
 					ParserCup.tablaSimbolos.volcarTabla();
+					ParserCup.arbol.imprimirArbol();
 				}
 			:}
 			 | declararProg: d BEGIN bloqueCodigo: b END {:
 				 System.out.println("Programa completo sin declaraciones");
-			 ParserCup.arbol.setRoot(new Nodo("ProgramaSimple", "", (Nodo)d, (Nodo)b));
+			 ParserCup.arbol.setRaiz(new Nodo("ProgramaSimple", "", (Nodo)d, (Nodo)b));
 			 if(ParserCup.hayErroresFinales()) System.err.println("Análisis acabado con errores. No se mostrará árbol ni tabla.");
 				else {
 					System.out.println("Análisis acabado sin errores.\n");
 					ParserCup.tablaSimbolos.volcarTabla();
+					ParserCup.arbol.imprimirArbol();
 				}
 			 :};
 
@@ -162,6 +164,7 @@ declarar ::= VAR declaracion: d DOSPUNTOS: v INTEGER PUNTOCOMA
 			:}
 			| error PUNTOCOMA: p {: 
 				System.err.println("Error sintáctico: Declaración mal formada en linea " + pleft);
+				ParserCup.colaDeclarados.clear();
 				ParserCup.hayErrores = true;
 			:};
 
@@ -201,9 +204,22 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 							System.err.println("Error semántico: Asignación aritmetica a variable tipo " + aux + " (Linea " + vleft + ", Pos " + vright +")");
 						}
 						else {
-							System.out.println("Asignacion Aritmetica");
-							RESULT = new Nodo("Asig", "Sent", auxn, (Nodo)e);
-							ParserCup.tablaSimbolos.inicializarSimbolo((String)v);//Decimos que ya está inicializado
+							Nodo aux2 = (Nodo) e;
+							if(aux2.getTipo().equals(aux)){
+								System.out.println("Asignacion Aritmetica");
+								RESULT = new Nodo("Asig", "Sent", auxn, (Nodo)e);
+								ParserCup.tablaSimbolos.inicializarSimbolo((String)v);//Decimos que ya está inicializado
+							}
+							else {
+								if(aux2.getTipo().equals("OP")&&aux.equals("Integer")){
+									System.out.println("Asignacion Aritmetica");
+									RESULT = new Nodo("Asig", "Sent", auxn, (Nodo)e);
+									ParserCup.tablaSimbolos.inicializarSimbolo((String)v);//Decimos que ya está inicializado
+								}else{
+									ParserCup.hayErrores = true;
+									System.err.println("Error semántico: Asignación " + aux2.getTipo() + " a variable tipo " + aux + " (Linea " + vleft + ", Pos " + vright +")");
+								}
+							}
 						}
 					}
 				:}
@@ -230,8 +246,15 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 						}
 					:}
 				| READ expresion: e PUNTOCOMA {:
-					System.out.println("Read");
-					RESULT = new Nodo("Read", "Sent", (Nodo)e, null);
+					Nodo aux = (Nodo) e;
+					if(aux.getTipo().equals("OP")||aux.getTipo().equals("Integer")){
+						System.out.println("Read");
+						RESULT = new Nodo("Read", "Sent", (Nodo)e, null);
+					}
+					else {
+						ParserCup.hayErrores = true;
+						System.err.println("Error semántico: Un Read debe ser de un tipo entero. Recibido " +aux.getTipo() + " (Linea " + eleft +")");
+					}
 				:}
 				| WRITE expresion: e PUNTOCOMA {:
 					System.out.println("Write de expresion");
@@ -323,8 +346,8 @@ sentencia ::= IDENTIFICADOR: v ASIGNACION expresion: e PUNTOCOMA
 					System.out.println("Bucle");
 					RESULT = new Nodo("While","Sent", (Nodo)c, (Nodo)b);
 					Nodo aux = (Nodo) c;
-					if(aux.getLHijo().getValor().equals("True")||aux.getLHijo().getValor().equals("False")){
-						//Si la condicion es explicitamente true or false, no va a acabar. Avisa
+					if(aux.getLHijo().getValor().equals("True")){
+						//Si la condicion es explicitamente true, no va a acabar. Avisa
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Detectado bucle infinito que empieza en linea " + cleft);
 					}
@@ -552,8 +575,13 @@ expresion ::= IDENTIFICADOR: v {:
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Llamada a variable no declarada" + " (Linea " + vleft + ", Pos " + vright +")");
 					} else {
-						System.out.println("Expresion Identificador tipo " + aux);
-						RESULT = new Nodo((String)v, aux, null, null);//creamos nodo con identificador y lo subimos
+						if(aux.equals("pseudo")){
+							ParserCup.hayErrores = true;
+							System.err.println("Error semántico: Llamada no permitida a nombre del programa" + " (Linea " + vleft + ", Pos " + vright +")");
+						} else{
+							System.out.println("Expresion Identificador tipo " + aux);
+							RESULT = new Nodo((String)v, aux, null, null);//creamos nodo con identificador y lo subimos
+						}
 					}
 				:}
 				| ENTERO: v {:
