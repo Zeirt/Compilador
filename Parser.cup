@@ -577,10 +577,12 @@ expresion ::= IDENTIFICADOR: v {:
 						//No existe en la tabla. Error
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Llamada a variable no declarada" + " (Linea " + vleft + ", Pos " + vright +")");
+						RESULT = new Nodo((String)v, aux, null, null);
 					} else {
 						if(aux.equals("pseudo")){
 							ParserCup.hayErrores = true;
 							System.err.println("Error semántico: Llamada no permitida a nombre del programa" + " (Linea " + vleft + ", Pos " + vright +")");
+							RESULT = new Nodo((String)v, aux, null, null);//lo subimos igual para no romper el analisis
 						} else{
 							System.out.println("Expresion Identificador tipo " + aux);
 							RESULT = new Nodo((String)v, aux, null, null);//creamos nodo con identificador y lo subimos
@@ -605,6 +607,7 @@ expresion ::= IDENTIFICADOR: v {:
 					} else {
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);//Creamos nodo con hijos como operadores
 					}
 				:}
 				| expresion: e1 RESTA: v expresion: e2 {:
@@ -616,6 +619,7 @@ expresion ::= IDENTIFICADOR: v {:
 					} else {
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);//Creamos nodo con hijos como operadores
 					}
 				:}
 				| expresion: e1 MULTIPLICACION: v expresion: e2 {:
@@ -627,6 +631,7 @@ expresion ::= IDENTIFICADOR: v {:
 					} else {
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);//Creamos nodo con hijos como operadores
 					}
 				:}
 				| expresion: e1 DIVISION: v expresion: e2 {:
@@ -642,5 +647,6 @@ expresion ::= IDENTIFICADOR: v {:
 					} else {
 						ParserCup.hayErrores = true;
 						System.err.println("Error semántico: Expresión de tipo inesperado en operación de enteros" + " (Linea " + vleft + ")");
+						RESULT = new Nodo((String)v, "OP", (Nodo)e1, (Nodo)e2);//Creamos nodo con hijos como operadores
 					}
 				:};
